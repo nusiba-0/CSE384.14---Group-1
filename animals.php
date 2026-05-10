@@ -1,53 +1,58 @@
 <?php
-require_once 'config.php';
+session_start();
+
+$host = 'localhost';
+$user = 'root';
+$pass = '';
+$db   = 'meowoof';
+
+$conn = mysqli_connect($host, $user, $pass, $db);
+if (!$conn) {
+    die('Database connection failed: ' . mysqli_connect_error());
+}
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: index.php");
     exit();
 }
 
-$message = '';
+$message  = '';
 $msg_type = '';
 
-// ===== ADD ANIMAL =====
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_animal'])) {
-    $type          = mysqli_real_escape_string($conn, $_POST['type']);
+    $type          = trim($_POST['type']);
     $area_id       = (int)$_POST['area_id'];
-    $health_status = mysqli_real_escape_string($conn, $_POST['health_status']);
-    $is_vaccinated = mysqli_real_escape_string($conn, $_POST['is_vaccinated']);
-    $is_sterilized = mysqli_real_escape_string($conn, $_POST['is_sterilized']);
-    $age           = !empty($_POST['age']) ? (int)$_POST['age'] : 'NULL';
-    $gender        = mysqli_real_escape_string($conn, $_POST['gender']);
-    $feeding_time  = mysqli_real_escape_string($conn, $_POST['feeding_time']);
+    $health_status = trim($_POST['health_status']);
+    $is_vaccinated = trim($_POST['is_vaccinated']);
+    $is_sterilized = trim($_POST['is_sterilized']);
+   $age = $_POST['age'] !== '' ? (int)$_POST['age'] : null;
+    $gender        = trim($_POST['gender']);
+    $feeding_time  = trim($_POST['feeding_time']);
 
-    $age_val = ($age === 'NULL') ? 'NULL' : $age;
+    $stmt = mysqli_prepare($conn, "INSERT INTO animals (type, area_id, health_status, is_vaccinated, is_sterilized, age, gender, feeding_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    mysqli_stmt_bind_param($stmt, 'sissssss', $type, $area_id, $health_status, $is_vaccinated, $is_sterilized, $age, $gender, $feeding_time);
 
-    $sql = "INSERT INTO animals (type, area_id, health_status, is_vaccinated, is_sterilized, age, gender, feeding_time)
-            VALUES ('$type', $area_id, '$health_status', '$is_vaccinated', '$is_sterilized', $age_val, '$gender', '$feeding_time')";
-
-    if (mysqli_query($conn, $sql)) {
-        $message  = 'প্রাণীটি সফলভাবে যোগ করা হয়েছে!';
+    if (mysqli_stmt_execute($stmt)) {
+        $message  = 'Animal added successfully!';
         $msg_type = 'success';
     } else {
-        $message  = 'সমস্যা হয়েছে: ' . mysqli_error($conn);
+        $message  = 'Error: ' . mysqli_error($conn);
         $msg_type = 'error';
     }
+    mysqli_stmt_close($stmt);
 }
-
-// ===== DELETE ANIMAL =====
 if (isset($_GET['delete'])) {
     $del_id = (int)$_GET['delete'];
-    mysqli_query($conn, "DELETE FROM animals WHERE animal_id = $del_id");
-    $message  = 'প্রাণীটি মুছে ফেলা হয়েছে।';
+    $stmt = mysqli_prepare($conn, "DELETE FROM animals WHERE animal_id = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $del_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    $message  = 'Animal deleted.';
     $msg_type = 'success';
 }
-
-// ===== FETCH AREAS =====
 $areas_result = mysqli_query($conn, "SELECT * FROM areas ORDER BY area_name");
-
-// ===== FETCH ANIMALS =====
-$filter_type   = isset($_GET['filter_type']) ? mysqli_real_escape_string($conn, $_GET['filter_type']) : '';
-$filter_health = isset($_GET['filter_health']) ? mysqli_real_escape_string($conn, $_GET['filter_health']) : '';
+$filter_type   = isset($_GET['filter_type'])   ? trim($_GET['filter_type'])   : '';
+$filter_health = isset($_GET['filter_health']) ? trim($_GET['filter_health']) : '';
 
 $where = [];
 if ($filter_type)   $where[] = "a.type = '$filter_type'";
@@ -60,11 +65,9 @@ $animals_result = mysqli_query($conn,
      $where_sql
      ORDER BY a.animal_id DESC"
 );
-
 $total = mysqli_num_rows($animals_result);
 ?>
-<!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -91,8 +94,6 @@ body {
     color: var(--text);
     min-height: 100vh;
 }
-
-/* NAV */
 nav {
     background: var(--green);
     padding: 14px 24px;
@@ -102,7 +103,7 @@ nav {
     box-shadow: 0 3px 16px rgba(47,168,126,0.3);
     position: sticky; top: 0; z-index: 100;
 }
-.nav-brand { color:#fff; font-weight:900; font-size:1.2rem; display:flex; align-items:center; gap:8px; }
+.nav-brand { color:#fff; font-weight:900; font-size:1.2rem; }
 .nav-links a {
     color: rgba(255,255,255,0.85);
     text-decoration: none;
@@ -112,19 +113,13 @@ nav {
     transition: color 0.2s;
 }
 .nav-links a:hover { color: #fff; }
-
-/* MAIN LAYOUT */
 .container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
-
-/* PAGE HEADER */
 .page-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
 }
 .page-header h1 { font-size: 1.5rem; font-weight: 900; color: var(--text); }
 .page-header p  { color: var(--muted); font-size: 0.88rem; margin-top: 2px; }
-
-/* STAT CARDS */
 .stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
 .stat-card {
     background: var(--card);
@@ -141,16 +136,14 @@ nav {
 .stat-sick .num { color: #e05252; }
 .stat-all  .num { color: var(--green); }
 
-/* ALERT */
 .alert {
     padding: 13px 18px; border-radius: 12px;
     font-weight: 700; font-size: 0.9rem;
-    margin-bottom: 22px; display: flex; align-items: center; gap: 10px;
+    margin-bottom: 22px;
 }
 .alert-success { background:#edfaf4; color:#1a7a50; border:1.5px solid #b2e8d0; }
 .alert-error   { background:#fef0f0; color:#c0392b; border:1.5px solid #f5c6c6; }
 
-/* FORM CARD */
 .form-card {
     background: var(--card);
     border-radius: 18px;
@@ -159,10 +152,7 @@ nav {
     margin-bottom: 28px;
     border: 1.5px solid var(--border);
 }
-.form-card h2 {
-    font-size: 1.05rem; font-weight: 800; color: var(--text);
-    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
-}
+.form-card h2 { font-size: 1.05rem; font-weight: 800; color: var(--text); margin-bottom: 20px; }
 .form-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -203,14 +193,11 @@ input::placeholder { color: #b0c8be; }
 }
 .btn-green:hover { background: var(--green-d); transform: translateY(-1px); }
 
-/* FILTER BAR */
 .filter-bar {
     display: flex; gap: 12px; align-items: center;
     flex-wrap: wrap; margin-bottom: 18px;
 }
-.filter-bar select {
-    padding: 9px 13px; min-width: 160px; font-size: 0.88rem;
-}
+.filter-bar select { padding: 9px 13px; min-width: 160px; font-size: 0.88rem; }
 .filter-bar .btn { padding: 9px 18px; font-size: 0.85rem; }
 .btn-outline {
     background: #fff; color: var(--green);
@@ -218,7 +205,6 @@ input::placeholder { color: #b0c8be; }
 }
 .btn-outline:hover { background: var(--green-l); }
 
-/* TABLE CARD */
 .table-card {
     background: var(--card);
     border-radius: 18px;
@@ -256,40 +242,35 @@ td {
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #fafdf9; }
 
-/* BADGES */
 .badge {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 3px 10px; border-radius: 20px;
     font-size: 0.75rem; font-weight: 800;
 }
-.badge-cat    { background: #fff8e6; color: #b07800; border: 1px solid #f5dfa0; }
-.badge-dog    { background: #e8f1fb; color: #2d6db5; border: 1px solid #b8d4f0; }
-.badge-healthy   { background: #edfaf4; color: #1a7a50; border: 1px solid #b2e8d0; }
-.badge-sick      { background: #fef0f0; color: #c0392b; border: 1px solid #f5c6c6; }
-.badge-injured   { background: #fff4e6; color: #b05800; border: 1px solid #fcd9a8; }
-.badge-pregnant  { background: #f5e8fb; color: #7b2f9e; border: 1px solid #dab8f0; }
-.badge-yes { background: #edfaf4; color: #1a7a50; border: 1px solid #b2e8d0; }
-.badge-no  { background: #f4f4f4; color: #888; border: 1px solid #ddd; }
+.badge-cat     { background: #fff8e6; color: #b07800; border: 1px solid #f5dfa0; }
+.badge-dog     { background: #e8f1fb; color: #2d6db5; border: 1px solid #b8d4f0; }
+.badge-healthy { background: #edfaf4; color: #1a7a50; border: 1px solid #b2e8d0; }
+.badge-sick    { background: #fef0f0; color: #c0392b; border: 1px solid #f5c6c6; }
+.badge-injured { background: #fff4e6; color: #b05800; border: 1px solid #fcd9a8; }
+.badge-pregnant{ background: #f5e8fb; color: #7b2f9e; border: 1px solid #dab8f0; }
+.badge-yes     { background: #edfaf4; color: #1a7a50; border: 1px solid #b2e8d0; }
+.badge-no      { background: #f4f4f4; color: #888;    border: 1px solid #ddd; }
 
-/* DELETE BTN */
 .btn-del {
     background: none; border: 1.5px solid #f5c6c6;
     color: var(--red); border-radius: 8px;
     padding: 5px 12px; font-size: 0.8rem;
     font-family: 'Nunito', sans-serif;
     font-weight: 700; cursor: pointer;
+    text-decoration: none;
     transition: all 0.2s;
 }
 .btn-del:hover { background: #fef0f0; }
 
-/* EMPTY */
-.empty-state {
-    text-align: center; padding: 48px 20px; color: var(--muted);
-}
-.empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+.empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+.empty-state .icon { font-size: 2rem; font-weight: 900; margin-bottom: 12px; }
 .empty-state p { font-weight: 700; }
 
-/* RESPONSIVE */
 @media (max-width: 640px) {
     .form-grid { grid-template-columns: 1fr 1fr; }
     .stats { gap: 10px; }
@@ -300,9 +281,8 @@ tr:hover td { background: #fafdf9; }
 </head>
 <body>
 
-<!-- NAV -->
 <nav>
-    <div class="nav-brand">🐾 MeoWoof</div>
+    <div class="nav-brand">MeoWoof</div>
     <div class="nav-links">
         <a href="dashboard.php">Dashboard</a>
         <a href="animals.php" style="color:#fff;">Animals</a>
@@ -312,22 +292,19 @@ tr:hover td { background: #fafdf9; }
 
 <div class="container">
 
-    <!-- HEADER -->
     <div class="page-header">
         <div>
-            <h1>🐱🐶 Animal Management</h1>
-            <p>Dhaka-র পথের প্রাণীদের তথ্য যোগ করুন ও পরিচালনা করুন</p>
+            <h1>Animal Management</h1>
+            <p>Add and manage stray animals in Dhaka</p>
         </div>
     </div>
 
-    <!-- ALERT -->
     <?php if ($message): ?>
     <div class="alert alert-<?= $msg_type ?>">
-        <?= $msg_type === 'success' ? '✅' : '⚠️' ?> <?= htmlspecialchars($message) ?>
+        <?= htmlspecialchars($message) ?>
     </div>
     <?php endif; ?>
 
-    <!-- STAT CARDS -->
     <?php
     $stat_all  = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM animals"))[0] ?? 0;
     $stat_cat  = mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM animals WHERE type='cat'"))[0] ?? 0;
@@ -337,133 +314,130 @@ tr:hover td { background: #fafdf9; }
     <div class="stats">
         <div class="stat-card stat-all">
             <div class="num"><?= $stat_all ?></div>
-            <div class="lbl">মোট প্রাণী</div>
+            <div class="lbl">Total Animals</div>
         </div>
         <div class="stat-card stat-cat">
             <div class="num"><?= $stat_cat ?></div>
-            <div class="lbl">🐱 বিড়াল</div>
+            <div class="lbl">cat</div>
         </div>
         <div class="stat-card stat-dog">
             <div class="num"><?= $stat_dog ?></div>
-            <div class="lbl">🐶 কুকুর</div>
+            <div class="lbl">dog</div>
         </div>
         <div class="stat-card stat-sick">
             <div class="num"><?= $stat_sick ?></div>
-            <div class="lbl">⚠️ অসুস্থ/আহত</div>
+            <div class="lbl">sick / injured</div>
         </div>
     </div>
 
-    <!-- ADD FORM -->
     <div class="form-card">
-        <h2>➕ নতুন প্রাণী যোগ করুন</h2>
+        <h2>Add New Animal</h2>
         <form method="POST">
             <div class="form-grid">
                 <div class="field">
-                    <label>ধরন (Type)</label>
+                    <label>type</label>
                     <select name="type" required>
-                        <option value="">বেছে নিন</option>
-                        <option value="cat">🐱 বিড়াল (Cat)</option>
-                        <option value="dog">🐶 কুকুর (Dog)</option>
+                        <option value="">select</option>
+                        <option value="cat">cat</option>
+                        <option value="dog">dog</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label>এলাকা (Area)</label>
+                    <label>area</label>
                     <select name="area_id" required>
-                        <option value="">এলাকা বেছে নিন</option>
+                        <option value="">select area</option>
                         <?php if ($areas_result): while ($area = mysqli_fetch_assoc($areas_result)): ?>
                         <option value="<?= $area['area_id'] ?>"><?= htmlspecialchars($area['area_name']) ?></option>
                         <?php endwhile; endif; ?>
                     </select>
                 </div>
                 <div class="field">
-                    <label>স্বাস্থ্য অবস্থা</label>
+                    <label>health status</label>
                     <select name="health_status" required>
-                        <option value="">বেছে নিন</option>
-                        <option value="healthy">✅ সুস্থ (Healthy)</option>
-                        <option value="sick">🤒 অসুস্থ (Sick)</option>
-                        <option value="injured">🩹 আহত (Injured)</option>
-                        <option value="pregnant">🤰 গর্ভবতী (Pregnant)</option>
+                        <option value="">select</option>
+                        <option value="healthy">healthy</option>
+                        <option value="sick">sick</option>
+                        <option value="injured">injured</option>
+                        <option value="pregnant">pregnant</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label>টিকা দেওয়া?</label>
+                    <label>vaccinated?</label>
                     <select name="is_vaccinated" required>
-                        <option value="yes">✅ হ্যাঁ (Yes)</option>
-                        <option value="no">❌ না (No)</option>
+                        <option value="yes">yes</option>
+                        <option value="no">no</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label>বন্ধ্যাকরণ?</label>
+                    <label>sterilized?</label>
                     <select name="is_sterilized" required>
-                        <option value="yes">✅ হ্যাঁ (Yes)</option>
-                        <option value="no">❌ না (No)</option>
+                        <option value="yes">yes</option>
+                        <option value="no">no</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label>বয়স (বছর, optional)</label>
-                    <input type="number" name="age" min="0" max="30" placeholder="যদি জানা থাকে">
+                    <label>Age (years, optional)</label>
+                    <input type="number" name="age" min="0" max="30" placeholder="If known">
                 </div>
                 <div class="field">
-                    <label>লিঙ্গ (Gender)</label>
+                    <label>gender</label>
                     <select name="gender" required>
-                        <option value="">বেছে নিন</option>
-                        <option value="male">♂ পুরুষ (Male)</option>
-                        <option value="female">♀ মহিলা (Female)</option>
-                        <option value="unknown">❓ অজানা</option>
+                        <option value="">select</option>
+                        <option value="male">male</option>
+                        <option value="female">female</option>
+                        <option value="unknown">unknown</option>
                     </select>
                 </div>
                 <div class="field">
-                    <label>খাওয়ানোর সময়</label>
+                    <label>feeding time</label>
                     <input type="time" name="feeding_time" required>
                 </div>
                 <div class="field full" style="display:flex; justify-content:flex-end; margin-top:4px;">
-                    <button type="submit" name="add_animal" class="btn btn-green">➕ প্রাণী যোগ করুন</button>
+                    <button type="submit" name="add_animal" class="btn btn-green">Add Animal</button>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- FILTER -->
     <div class="filter-bar">
         <form method="GET" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
             <select name="filter_type">
-                <option value="">সব ধরন</option>
-                <option value="cat" <?= $filter_type==='cat'?'selected':'' ?>>🐱 বিড়াল</option>
-                <option value="dog" <?= $filter_type==='dog'?'selected':'' ?>>🐶 কুকুর</option>
+                <option value="">All Types</option>
+                <option value="cat" <?= $filter_type==='cat'?'selected':'' ?>>cat</option>
+                <option value="dog" <?= $filter_type==='dog'?'selected':'' ?>>dog</option>
             </select>
             <select name="filter_health">
-                <option value="">সব অবস্থা</option>
-                <option value="healthy"  <?= $filter_health==='healthy'?'selected':'' ?>>✅ সুস্থ</option>
-                <option value="sick"     <?= $filter_health==='sick'?'selected':'' ?>>🤒 অসুস্থ</option>
-                <option value="injured"  <?= $filter_health==='injured'?'selected':'' ?>>🩹 আহত</option>
-                <option value="pregnant" <?= $filter_health==='pregnant'?'selected':'' ?>>🤰 গর্ভবতী</option>
+                <option value="">All Status</option>
+                <option value="healthy"  <?= $filter_health==='healthy'?'selected':''  ?>>healthy</option>
+                <option value="sick"     <?= $filter_health==='sick'?'selected':''     ?>>sick</option>
+                <option value="injured"  <?= $filter_health==='injured'?'selected':''  ?>>injured</option>
+                <option value="pregnant" <?= $filter_health==='pregnant'?'selected':'' ?>>pregnant</option>
             </select>
-            <button type="submit" class="btn btn-green">ফিল্টার করুন</button>
-            <a href="animals.php" class="btn btn-outline">রিসেট</a>
+            <button type="submit" class="btn btn-green">filter</button>
+            <a href="animals.php" class="btn btn-outline">reset</a>
         </form>
     </div>
 
-    <!-- TABLE -->
     <div class="table-card">
         <div class="table-head">
-            <h2>প্রাণীদের তালিকা</h2>
-            <span class="count-badge"><?= $total ?> টি প্রাণী</span>
+            <h2>Animal List</h2>
+            <span class="count-badge"><?= $total ?> animals</span>
         </div>
         <?php if ($total > 0): ?>
         <div style="overflow-x:auto;">
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>ধরন</th>
-                    <th>এলাকা</th>
-                    <th>স্বাস্থ্য</th>
-                    <th>টিকা</th>
-                    <th>বন্ধ্যা</th>
-                    <th>বয়স</th>
-                    <th>লিঙ্গ</th>
-                    <th>খাওয়ার সময়</th>
-                    <th>Action</th>
+                    <th>iD</th>
+                    <th>type</th>
+                    <th>area</th>
+                    <th>health</th>
+                    <th>vaccinated</th>
+                    <th>sterilized</th>
+                    <th>age</th>
+                    <th>gender</th>
+                    <th>feeding time</th>
+                    <th>action</th>
                 </tr>
             </thead>
             <tbody>
@@ -472,39 +446,39 @@ tr:hover td { background: #fafdf9; }
                     <td><strong>#<?= $animal['animal_id'] ?></strong></td>
                     <td>
                         <?php if ($animal['type'] === 'cat'): ?>
-                            <span class="badge badge-cat">🐱 বিড়াল</span>
+                            <span class="badge badge-cat">cat</span>
                         <?php else: ?>
-                            <span class="badge badge-dog">🐶 কুকুর</span>
+                            <span class="badge badge-dog">dog</span>
                         <?php endif; ?>
                     </td>
-                    <td><?= htmlspecialchars($animal['area_name'] ?? '—') ?></td>
+                    <td><?= htmlspecialchars($animal['area_name'] ?? '-') ?></td>
                     <td>
                         <?php
-                        $h = $animal['health_status'];
+                        $h   = $animal['health_status'];
                         $map = [
-                            'healthy'  => ['badge-healthy',  '✅ সুস্থ'],
-                            'sick'     => ['badge-sick',     '🤒 অসুস্থ'],
-                            'injured'  => ['badge-injured',  '🩹 আহত'],
-                            'pregnant' => ['badge-pregnant', '🤰 গর্ভবতী'],
+                            'healthy'  => ['badge-healthy',  'healthy'],
+                            'sick'     => ['badge-sick',     'sick'],
+                            'injured'  => ['badge-injured',  'injured'],
+                            'pregnant' => ['badge-pregnant', 'pregnant'],
                         ];
                         [$cls, $lbl] = $map[$h] ?? ['badge-no', $h];
                         ?>
                         <span class="badge <?= $cls ?>"><?= $lbl ?></span>
                     </td>
-                    <td><span class="badge badge-<?= $animal['is_vaccinated'] ?>"><?= $animal['is_vaccinated'] === 'yes' ? '✅ হ্যাঁ' : '❌ না' ?></span></td>
-                    <td><span class="badge badge-<?= $animal['is_sterilized'] ?>"><?= $animal['is_sterilized'] === 'yes' ? '✅ হ্যাঁ' : '❌ না' ?></span></td>
-                    <td><?= $animal['age'] !== null ? $animal['age'] . ' বছর' : '—' ?></td>
+                    <td><span class="badge badge-<?= $animal['is_vaccinated'] ?>"><?= $animal['is_vaccinated'] === 'yes' ? 'yes' : 'no' ?></span></td>
+                    <td><span class="badge badge-<?= $animal['is_sterilized'] ?>"><?= $animal['is_sterilized'] === 'yes' ? 'yes' : 'no' ?></span></td>
+                    <td><?= $animal['age'] !== null ? $animal['age'] . ' yrs' : '—' ?></td>
                     <td>
                         <?php
                         $g = $animal['gender'];
-                        echo $g === 'male' ? '♂ পুরুষ' : ($g === 'female' ? '♀ মহিলা' : '❓');
+                        echo $g === 'male' ? 'male' : ($g === 'female' ? 'female' : 'unknown');
                         ?>
                     </td>
-                    <td><?= $animal['feeding_time'] ? date('h:i A', strtotime($animal['feeding_time'])) : '—' ?></td>
+                    <td><?= $animal['feeding_time'] ? date('h:i A', strtotime($animal['feeding_time'])) : '-' ?></td>
                     <td>
                         <a href="animals.php?delete=<?= $animal['animal_id'] ?>"
-                           onclick="return confirm('এই প্রাণীর তথ্য মুছে ফেলবেন?')"
-                           class="btn-del">🗑 মুছুন</a>
+                           onclick="return confirm('Delete this animal?')"
+                           class="btn-del">Delete</a>
                     </td>
                 </tr>
             <?php endwhile; ?>
@@ -513,9 +487,9 @@ tr:hover td { background: #fafdf9; }
         </div>
         <?php else: ?>
         <div class="empty-state">
-            <div class="icon">🐾</div>
-            <p>এখনো কোনো প্রাণী যোগ করা হয়নি</p>
-            <p style="font-size:0.85rem; margin-top:6px; font-weight:400;">উপরের ফর্ম দিয়ে প্রথম প্রাণী যোগ করুন!</p>
+            <div class="icon">No Animals</div>
+            <p>No animals added yet.</p>
+            <p style="font-size:0.85rem; margin-top:6px; font-weight:400;">Use the form above to add the first animal!</p>
         </div>
         <?php endif; ?>
     </div>
