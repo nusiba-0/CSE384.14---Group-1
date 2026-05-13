@@ -1,0 +1,246 @@
+const API_URL = 'http://localhost:8080/api';
+
+
+let selectedRole = 'volunteer'; // default
+
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+   selectRole('volunteer');
+   loadAreasForSignup();
+
+
+   // If already logged in, redirect
+   const user = getStoredUser();
+   if (user) window.location.href = 'index.html';
+});
+
+
+// ===== ROLE SELECTION =====
+function selectRole(role) {
+   selectedRole = role;
+
+
+   document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+   document.getElementById('role' + capitalize(role)).classList.add('selected');
+
+
+   // Update badges
+   const icon  = role === 'vet' ? '🩺' : '🙋';
+   const label = role === 'vet' ? 'Veterinarian' : 'Volunteer';
+
+
+   document.getElementById('loginRoleIcon').textContent  = icon;
+   document.getElementById('loginRoleLabel').textContent = `Signing in as ${label}`;
+   document.getElementById('signupRoleIcon').textContent  = icon;
+   document.getElementById('signupRoleLabel').textContent = `Signing up as ${label}`;
+
+
+   // Toggle conditional fields
+   const vetFields = document.querySelectorAll('.vet-only');
+   const volFields = document.querySelectorAll('.vol-only');
+
+
+   if (role === 'vet') {
+       vetFields.forEach(f => f.classList.remove('hidden'));
+       volFields.forEach(f => f.classList.add('hidden'));
+   } else {
+       vetFields.forEach(f => f.classList.add('hidden'));
+       volFields.forEach(f => f.classList.remove('hidden'));
+   }
+}
+
+
+// ===== TAB SWITCHING =====
+function switchTab(tab) {
+   document.getElementById('loginForm').classList.toggle('hidden',  tab !== 'login');
+   document.getElementById('signupForm').classList.toggle('hidden', tab !== 'signup');
+   document.getElementById('tabLogin').classList.toggle('active',   tab === 'login');
+   document.getElementById('tabSignup').classList.toggle('active',  tab === 'signup');
+}
+
+
+// ===== PASSWORD VISIBILITY =====
+function togglePw(inputId, btn) {
+   const input = document.getElementById(inputId);
+   if (input.type === 'password') {
+       input.type = 'text';
+       btn.textContent = '🙈';
+   } else {
+       input.type = 'password';
+       btn.textContent = '👁';
+   }
+}
+
+
+// ===== PASSWORD STRENGTH =====
+function checkStrength(pw) {
+   const fill  = document.getElementById('strengthFill');
+   const label = document.getElementById('strengthLabel');
+   let score = 0;
+   if (pw.length >= 8)                    score++;
+   if (/[A-Z]/.test(pw))                  score++;
+   if (/[0-9]/.test(pw))                  score++;
+   if (/[^A-Za-z0-9]/.test(pw))          score++;
+
+
+   const levels = [
+       { pct: '0%',   color: '#e5e7eb', text: '' },
+       { pct: '25%',  color: '#ef4444', text: '😬 Too weak' },
+       { pct: '50%',  color: '#f97316', text: '🤔 Fair' },
+       { pct: '75%',  color: '#eab308', text: '🙂 Good' },
+       { pct: '100%', color: '#10b981', text: '💪 Strong!' },
+   ];
+
+
+   const lvl = pw.length === 0 ? levels[0] : levels[score];
+   fill.style.width     = lvl.pct;
+   fill.style.background = lvl.color;
+   label.textContent    = lvl.text;
+   label.style.color    = lvl.color;
+}
+
+
+// ===== LOAD AREAS INTO SIGNUP SELECT =====
+function loadAreasForSignup() {
+   fetch(`${API_URL}/areas`)
+       .then(r => r.json())
+       .then(areas => {
+           const sel = document.getElementById('signupArea');
+           areas.forEach(a => {
+               sel.innerHTML += `<option value="${a.id}">${a.name}</option>`;
+           });
+       }).catch(() => {});
+}
+
+
+// ===== LOGIN =====
+function handleLogin() {
+   const email    = document.getElementById('loginEmail').value.trim();
+   const password = document.getElementById('loginPassword').value;
+
+
+   if (!email || !password) {
+       showToast('⚠️ Please fill in all fields', 'error'); return;
+   }
+
+
+   const btn = document.querySelector('#loginForm .submit-btn');
+   btn.classList.add('loading');
+   btn.querySelector('span').textContent = 'Signing in...';
+
+
+   const endpoint = selectedRole === 'vet'
+       ? `${API_URL}/vets/login`
+       : `${API_URL}/volunteers/login`;
+
+
+   fetch(endpoint, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ email, password })
+   })
+       .then(r => {
+           if (!r.ok) throw new Error('Invalid credentials');
+           return r.json();
+       })
+       .then(user => {
+           storeUser({ ...user, role: selectedRole });
+           showToast('✅ Welcome back! Redirecting...', 'success');
+           setTimeout(() => window.location.href = 'index.html', 1200);
+       })
+       .catch(err => {
+           showToast('❌ ' + (err.message || 'Login failed. Check your credentials.'), 'error');
+           btn.classList.remove('loading');
+           btn.querySelector('span').textContent = 'Sign In';
+       });
+}
+
+
+// ===== SIGNUP =====
+function handleSignup() {
+   const firstName = document.getElementById('signupFirst').value.trim();
+   const lastName  = document.getElementById('signupLast').value.trim();
+   const email     = document.getElementById('signupEmail').value.trim();
+   const phone     = document.getElementById('signupPhone').value.trim();
+   const password  = document.getElementById('signupPassword').value;
+   const confirm   = document.getElementById('signupConfirm').value;
+   const agreed    = document.getElementById('agreeTerms').checked;
+
+
+   if (!firstName || !lastName || !email || !phone || !password) {
+       showToast('⚠️ Please fill in all fields', 'error'); return;
+   }
+   if (password !== confirm) {
+       showToast('❌ Passwords do not match', 'error'); return;
+   }
+   if (password.length < 8) {
+       showToast('⚠️ Password must be at least 8 characters', 'error'); return;
+   }
+   if (!agreed) {
+       showToast('⚠️ Please agree to the Terms of Service', 'error'); return;
+   }
+
+
+   const btn = document.querySelector('#signupForm .submit-btn');
+   btn.classList.add('loading');
+   btn.querySelector('span').textContent = 'Creating account...';
+
+
+   let payload = { name: `${firstName} ${lastName}`, email, phone, password };
+   let endpoint;
+
+
+   if (selectedRole === 'vet') {
+       payload.specialization = document.getElementById('signupSpec').value;
+       endpoint = `${API_URL}/vets/register`;
+   } else {
+       const areaId = document.getElementById('signupArea').value;
+       if (areaId) payload.area = { id: parseInt(areaId) };
+       endpoint = `${API_URL}/volunteers/register`;
+   }
+
+
+   fetch(endpoint, {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify(payload)
+   })
+       .then(r => {
+           if (!r.ok) throw new Error('Registration failed');
+           return r.json();
+       })
+       .then(user => {
+           storeUser({ ...user, role: selectedRole });
+           showToast('🎉 Account created! Welcome to MeowWoof!', 'success');
+           setTimeout(() => window.location.href = 'index.html', 1400);
+       })
+       .catch(err => {
+           showToast('❌ ' + (err.message || 'Signup failed. Try again.'), 'error');
+           btn.classList.remove('loading');
+           btn.querySelector('span').textContent = 'Create Account';
+       });
+}
+
+
+// ===== SESSION HELPERS =====
+function storeUser(user) {
+   localStorage.setItem('meowwoof_user', JSON.stringify(user));
+}
+function getStoredUser() {
+   try { return JSON.parse(localStorage.getItem('meowwoof_user')); }
+   catch { return null; }
+}
+
+
+// ===== TOAST =====
+function showToast(msg, type = '') {
+   const t = document.getElementById('toast');
+   t.textContent = msg;
+   t.className = 'toast show ' + type;
+   clearTimeout(t._timer);
+   t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
