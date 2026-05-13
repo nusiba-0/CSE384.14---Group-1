@@ -1,0 +1,41 @@
+package org.example.meowwoof.controller;
+
+
+import org.example.meowwoof.model.FoodDistribution;
+import org.example.meowwoof.service.FoodService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+
+@RestController
+@RequestMapping("/api/food")
+@CrossOrigin(origins = "*")
+public class FoodController {
+   @Autowired
+   private FoodService foodService;
+
+
+   @GetMapping
+   public List<FoodDistribution> getAllFood() {
+       return foodService.getAllFood();
+   }
+
+
+   @GetMapping("/area/{areaId}")
+   public List<FoodDistribution> getFoodByArea(@PathVariable Integer areaId) {
+       return foodService.getFoodByArea(areaId);
+   }
+
+
+   @PostMapping
+   public FoodDistribution createFood(@RequestBody FoodDistribution food) {
+       return foodService.createFood(food);
+   }
+
+
+   @DeleteMapping("/{id}")
+   public void deleteFood(@PathVariable Integer id) {
+       foodService.deleteFood(id);
+   }
+}
