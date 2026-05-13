@@ -1,0 +1,35 @@
+package org.example.meowwoof.service;
+
+
+import org.example.meowwoof.model.FoodDistribution;
+import org.example.meowwoof.repository.FoodRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+
+@Service
+public class FoodService {
+   @Autowired
+   private FoodRepository foodRepository;
+
+
+   public List<FoodDistribution> getAllFood() {
+       return foodRepository.findAll();
+   }
+
+
+   public List<FoodDistribution> getFoodByArea(Integer areaId) {
+       return foodRepository.findByAreaId(areaId);
+   }
+
+
+   public FoodDistribution createFood(FoodDistribution food) {
+       return foodRepository.save(food);
+   }
+
+
+   public void deleteFood(Integer id) {
+       foodRepository.deleteById(id);
+   }
+}
