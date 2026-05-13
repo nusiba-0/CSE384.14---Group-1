@@ -1,0 +1,46 @@
+package org.example.meowwoof.service;
+
+
+import org.example.meowwoof.model.Area;
+import org.example.meowwoof.repository.AreaRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+
+@Service
+public class AreaService {
+   @Autowired
+   private AreaRepository areaRepository;
+
+
+   public List<Area> getAllAreas() {
+       return areaRepository.findAll();
+   }
+
+
+   public Area getAreaById(Integer id) {
+       return areaRepository.findById(id).orElse(null);
+   }
+
+
+   public Area createArea(Area area) {
+       return areaRepository.save(area);
+   }
+
+
+   public Area updateArea(Integer id, Area areaDetails) {
+       Area area = areaRepository.findById(id).orElse(null);
+       if (area != null) {
+           area.setName(areaDetails.getName());
+           area.setLocation(areaDetails.getLocation());
+           return areaRepository.save(area);
+       }
+       return null;
+   }
+
+
+   public void deleteArea(Integer id) {
+       areaRepository.deleteById(id);
+   }
+}
