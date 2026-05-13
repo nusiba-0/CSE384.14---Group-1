@@ -1,0 +1,99 @@
+
+USE meowwoof_simple;
+
+CREATE TABLE IF NOT EXISTS areas (
+    id         INT PRIMARY KEY AUTO_INCREMENT,
+    name       VARCHAR(100) NOT NULL,
+    location   VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE IF NOT EXISTS food_distribution (
+    id                INT PRIMARY KEY AUTO_INCREMENT,
+    area_id           INT NOT NULL,
+    volunteer_id      INT,
+    quantity          DECIMAL(10,2),
+    distribution_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (area_id)      REFERENCES areas(id)      ON DELETE CASCADE,
+    FOREIGN KEY (volunteer_id) REFERENCES volunteers(id)  ON DELETE SET NULL
+);
+
+
+
+ALTER TABLE areas
+ADD COLUMN capacity INT DEFAULT 20;
+
+
+ALTER TABLE areas
+MODIFY COLUMN location VARCHAR(500);
+
+
+ALTER TABLE food_distribution
+ADD COLUMN notes VARCHAR(255) DEFAULT NULL;
+
+
+ALTER TABLE food_distribution
+ADD INDEX idx_distribution_date (distribution_date);
+
+INSERT INTO areas (name, location)
+VALUES ('Uttara', 'Uttara Sector 7 Park');
+
+
+UPDATE food_distribution
+SET quantity = 7.0
+WHERE area_id = 1
+  AND DATE(distribution_date) = '2026-05-05';
+
+
+
+DELETE FROM areas
+WHERE name = 'Uttara';
+
+
+
+SELECT
+    fd.id,
+    a.name           AS area,
+    v.name           AS distributed_by,
+    fd.quantity,
+    fd.distribution_date,
+    fd.notes
+FROM food_distribution fd
+JOIN  areas      a ON fd.area_id      = a.id
+LEFT JOIN volunteers v ON fd.volunteer_id = v.id
+ORDER BY fd.distribution_date DESC;
+
+
+SELECT
+    a.name                    AS area_name,
+    COUNT(fd.id)              AS distribution_sessions,
+    SUM(fd.quantity)          AS total_kg,
+    ROUND(AVG(fd.quantity),2) AS avg_kg_per_session
+FROM areas a
+LEFT JOIN food_distribution fd ON a.id = fd.area_id
+GROUP BY a.id, a.name
+ORDER BY total_kg DESC;
+
+SELECT
+    ar.name              AS area,
+    ar.capacity          AS max_capacity,
+    COUNT(a.id)          AS current_animals,
+    COUNT(a.id) - ar.capacity AS overflow
+FROM areas ar
+LEFT JOIN animals a ON ar.id = a.area_id
+GROUP BY ar.id, ar.name, ar.capacity
+HAVING COUNT(a.id) > ar.capacity;
+
+SELECT
+    a.name          AS area_name,
+    COUNT(an.id)    AS animal_count
+FROM areas a
+LEFT JOIN animals           an ON a.id = an.area_id
+LEFT JOIN food_distribution fd ON a.id = fd.area_id
+    AND MONTH(fd.distribution_date) = MONTH(NOW())
+    AND YEAR(fd.distribution_date)  = YEAR(NOW())
+WHERE fd.id IS NULL
+GROUP BY a.id, a.name
+HAVING animal_count > 0;
+
