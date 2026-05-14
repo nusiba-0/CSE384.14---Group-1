@@ -1,0 +1,1042 @@
+index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeowWoof </title>
+<link
+href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@4
+00;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- Floating paw prints background -->
+<div class="bg-paws" aria-hidden="true">
+<span></span><span></span><span></span><span></span>
+<span></span><span></span><span></span><span></span>
+</div>
+<!-- Sidebar -->
+<aside class="sidebar">
+<div class="sidebar-brand">
+<div class="brand-icon"></div>
+<h1 class="brand-name">MeowWoof</h1>
+<p class="brand-sub">Stray Animal Care</p>
+</div>
+<nav class="sidebar-nav">
+<button class="nav-btn active" onclick="showSection('dashboard', this)">
+<span class="nav-icon"></span>
+<span>Dashboard</span>
+</button>
+<button class="nav-btn" onclick="showSection('animals', this)">
+<span class="nav-icon"></span>
+<span>Animals</span>
+</button>
+<button class="nav-btn" onclick="showSection('areas', this)">
+<span class="nav-icon"></span>
+<span>Areas</span>
+</button>
+<button class="nav-btn" onclick="showSection('food', this)">
+<span class="nav-icon"></span>
+<span>Food</span>
+</button>
+<button class="nav-btn" onclick="showSection('medicine', this)">
+<span class="nav-icon"></span>
+<span>Medicine</span>
+</button>
+</nav>
+<div class="sidebar-footer">
+<span>Made with  for strays</span>
+</div>
+</aside>
+<!-- Main content -->
+<main class="main">
+<!-- Top bar -->
+<header class="topbar">
+<div class="topbar-title" id="topbarTitle">Dashboard</div>
+<div class="topbar-right">
+<div class="status-dot"></div>
+<span class="status-text">System Online</span>
+<div class="user-pill" id="userPill">
+<span class="user-avatar" id="userAvatar"></span>
+<span class="user-name" id="userName">Guest</span>
+<span class="user-role-badge"
+id="userRoleBadge">Volunteer</span>
+<button class="logout-btn" onclick="logout()">Sign Out</button>
+</div>
+</div>
+</header>
+<!-- ===== DASHBOARD ===== -->
+<div id="dashboard" class="section active">
+<div class="welcome-banner">
+<div class="welcome-text">
+<h2>Welcome back! </h2>
+<p>Here's how your furry friends are doing today.</p>
+</div>
+<div class="welcome-art"></div>
+</div>
+<div class="stats-grid">
+<div class="stat-card stat-purple">
+<div class="stat-icon"></div>
+<div class="stat-info">
+<div class="stat-number" id="totalAnimals">0</div>
+<div class="stat-label">Total Animals</div>
+</div>
+</div>
+<div class="stat-card stat-teal">
+<div class="stat-icon"></div>
+<div class="stat-info">
+<div class="stat-number" id="totalAreas">0</div>
+<div class="stat-label">Active Areas</div>
+</div>
+</div>
+<div class="stat-card stat-orange">
+<div class="stat-icon"></div>
+<div class="stat-info">
+<div class="stat-number" id="unhealthyCount">0</div>
+<div class="stat-label">Need Care</div>
+</div>
+</div>
+<div class="stat-card stat-green">
+<div class="stat-icon"></div>
+<div class="stat-info">
+<div class="stat-number" id="vaccinatedCount">0</div>
+<div class="stat-label">Vaccinated</div>
+</div>
+</div>
+</div>
+<div class="dashboard-cards">
+<div class="quick-card" onclick="showSection('animals',
+document.querySelector('[onclick*=animals]'))">
+<div class="qc-emoji"></div>
+<div class="qc-label">Manage Animals</div>
+<div class="qc-arrow"></div>
+</div>
+<div class="quick-card" onclick="showSection('food',
+document.querySelector('[onclick*=food]'))">
+<div class="qc-emoji"></div>
+<div class="qc-label">Log Food</div>
+<div class="qc-arrow"></div>
+</div>
+<div class="quick-card" onclick="showSection('medicine',
+document.querySelector('[onclick*=medicine]'))">
+<div class="qc-emoji"></div>
+<div class="qc-label">Add Medicine</div>
+<div class="qc-arrow"></div>
+</div>
+</div>
+</div>
+<!-- ===== ANIMALS ===== -->
+<div id="animals" class="section">
+<div class="section-header">
+<div>
+<h2 class="section-title"> Animals</h2>
+<p class="section-sub">Track all your stray buddies</p>
+</div>
+<button class="add-btn" onclick="openModal('animalModal')">+ Add
+Animal</button>
+</div>
+<div class="table-card">
+<table class="table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Area</th>
+<th>Health</th>
+<th>Age</th>
+<th>Vaccinated</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="animalsList"></tbody>
+</table>
+<div class="empty-state" id="animalsEmpty" style="display:none">
+<div></div>
+<p>No animals yet — add your first furry friend!</p>
+</div>
+</div>
+</div>
+<!-- ===== AREAS ===== -->
+<div id="areas" class="section">
+<div class="section-header">
+<div>
+<h2 class="section-title"> Areas</h2>
+<p class="section-sub">Manage feeding and care zones</p>
+</div>
+<button class="add-btn" onclick="openModal('areaModal')">+ Add
+Area</button>
+</div>
+<div class="table-card">
+<table class="table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Location</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="areasList"></tbody>
+</table>
+<div class="empty-state" id="areasEmpty" style="display:none">
+<div></div>
+<p>No areas yet — add a zone!</p>
+</div>
+</div>
+</div>
+<!-- ===== FOOD ===== -->
+<div id="food" class="section">
+<div class="section-header">
+<div>
+<h2 class="section-title"> Food Distribution</h2>
+<p class="section-sub">Record feeding sessions</p>
+</div>
+<button class="add-btn" onclick="openModal('foodModal')">+ Log
+Food</button>
+</div>
+<div class="table-card">
+<table class="table">
+<thead>
+<tr>
+<th>Area</th>
+<th>Quantity</th>
+<th>Date</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="foodList"></tbody>
+</table>
+<div class="empty-state" id="foodEmpty" style="display:none">
+<div></div>
+<p>No food records yet!</p>
+</div>
+</div>
+</div>
+<!-- ===== MEDICINE ===== -->
+<div id="medicine" class="section">
+<div class="section-header">
+<div>
+<h2 class="section-title">Medicine Records</h2>
+<p class="section-sub">Track treatments and care</p>
+</div>
+<button class="add-btn" onclick="openModal('medicineModal')">+ Add
+Medicine</button>
+</div>
+<div class="table-card">
+<table class="table">
+<thead>
+<tr>
+<th>Animal</th>
+<th>Medicine</th>
+<th>Date</th>
+<th>Notes</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="medicineList"></tbody>
+</table>
+<div class="empty-state" id="medicineEmpty" style="display:none">
+<div></div>
+<p>No medicine records yet!</p>
+</div>
+</div>
+</div>
+</main>
+<!-- ===== MODALS ===== -->
+<!-- Animal Modal -->
+<div id="animalModal" class="modal-overlay" onclick="closeModalOutside(event,
+'animalModal')">
+<div class="modal">
+<div class="modal-header">
+<h3> Add New Animal</h3>
+<button class="modal-close"
+onclick="closeModal('animalModal')"></button>
+</div>
+<div class="modal-body">
+<div class="form-row">
+<div class="form-group">
+<label>Animal Name</label>
+<input type="text" id="animalName" placeholder="e.g. Buddy">
+</div>
+<div class="form-group">
+<label>Type</label>
+<select id="animalType">
+<option value="">Select type</option>
+<option value="dog"> Dog</option>
+<option value="cat"> Cat</option>
+</select>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Area</label>
+<select id="animalArea"><option value="">Select
+area</option></select>
+</div>
+<div class="form-group">
+<label>Health Status</label>
+<select id="animalHealth">
+<option value="healthy"> Healthy</option>
+<option value="sick"> Sick</option>
+<option value="injured"> Injured</option>
+</select>
+</div>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Age (years)</label>
+<input type="number" id="animalAge" placeholder="e.g. 3"
+min="0">
+</div>
+<div class="form-group form-check">
+<label class="checkbox-label">
+<input type="checkbox" id="animalVaccinated">
+<span class="checkmark"></span>
+Vaccinated
+</label>
+</div>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn-cancel"
+onclick="closeModal('animalModal')">Cancel</button>
+<button class="btn-save" onclick="saveAnimal()">Save Animal
+</button>
+</div>
+</div>
+</div>
+<!-- Area Modal -->
+<div id="areaModal" class="modal-overlay" onclick="closeModalOutside(event,
+'areaModal')">
+<div class="modal">
+<div class="modal-header">
+<h3> Add New Area</h3>
+<button class="modal-close"
+onclick="closeModal('areaModal')"></button>
+</div>
+<div class="modal-body">
+<div class="form-group">
+<label>Area Name</label>
+<input type="text" id="areaName" placeholder="e.g. Mirpur">
+</div>
+<div class="form-group">
+<label>Location</label>
+<input type="text" id="areaLocation" placeholder="e.g. Mirpur
+Lake Area">
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn-cancel"
+onclick="closeModal('areaModal')">Cancel</button>
+<button class="btn-save" onclick="saveArea()">Save Area </button>
+</div>
+</div>
+</div>
+<!-- Food Modal -->
+<div id="foodModal" class="modal-overlay" onclick="closeModalOutside(event,
+'foodModal')">
+<div class="modal">
+<div class="modal-header">
+<h3> Log Food Distribution</h3>
+<button class="modal-close"
+onclick="closeModal('foodModal')">✕</button>
+</div>
+<div class="modal-body">
+<div class="form-group">
+<label>Area</label>
+<select id="foodArea"><option value="">Select
+area</option></select>
+</div>
+<div class="form-group">
+<label>Quantity (kg)</label>
+<input type="number" id="foodQuantity" placeholder="e.g. 5.5"
+step="0.1" min="0">
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn-cancel"
+onclick="closeModal('foodModal')">Cancel</button>
+<button class="btn-save" onclick="saveFood()">Log Food </button>
+</div>
+</div>
+</div>
+<!-- Medicine Modal -->
+<div id="medicineModal" class="modal-overlay" onclick="closeModalOutside(event,
+'medicineModal')">
+<div class="modal">
+<div class="modal-header">
+<h3> Add Medicine Record</h3>
+<button class="modal-close"
+onclick="closeModal('medicineModal')"></button>
+</div>
+<div class="modal-body">
+<div class="form-group">
+<label>Animal</label>
+<select id="medicineAnimal"><option value="">Select
+animal</option></select>
+</div>
+<div class="form-group">
+<label>Medicine Name</label>
+<input type="text" id="medicineName" placeholder="e.g.
+Amoxicillin">
+</div>
+<div class="form-group">
+<label>Notes</label>
+<textarea id="medicineNotes" placeholder="Any notes about the
+treatment..." rows="3"></textarea>
+</div>
+</div>
+<div class="modal-footer">
+<button class="btn-cancel"
+onclick="closeModal('medicineModal')">Cancel</button>
+<button class="btn-save" onclick="saveMedicine()">Save Record
+</button>
+</div>
+</div>
+</div>
+<!-- Toast notification -->
+<div id="toast" class="toast"></div>
+<script src="script.js"></script>
+<script src="auth-guard.js"></script>
+</body>
+</html>
+style.css
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+--purple: #a78bfa;
+--purple-dark: #7c3aed;
+--purple-light: #ede9fe;
+--teal: #2dd4bf;
+--teal-dark: #0d9488;
+--orange: #fb923c;
+--orange-dark: #ea580c;
+--green: #4ade80;
+--green-dark: #16a34a;
+--pink: #f472b6;
+--bg: #faf7ff;
+--sidebar-bg: #1e1035;
+--sidebar-w: 240px;
+--white: #ffffff;
+--text: #1e1b4b;
+--text-soft: #6b7280;
+--card-shadow: 0 4px 24px rgba(124,58,237,0.10);
+--radius: 18px;
+--radius-sm: 10px;
+}
+html { scroll-behavior: smooth; }
+body {
+font-family: 'Nunito', sans-serif;
+background: var(--bg);
+color: var(--text);
+min-height: 100vh;
+display: flex;
+overflow-x: hidden;
+}
+/* ===== FLOATING BG PAWS ===== */
+.bg-paws {
+position: fixed;
+inset: 0;
+pointer-events: none;
+z-index: 0;
+overflow: hidden;
+}
+.bg-paws span {
+position: absolute;
+font-size: 2rem;
+opacity: 0.04;
+animation: floatPaw 18s infinite ease-in-out;
+}
+.bg-paws span:nth-child(1) { top: 5%; left: 15%; animation-delay: 0s;
+font-size: 3rem; }
+.bg-paws span:nth-child(2) { top: 20%; left: 70%; animation-delay: 2s;
+font-size: 1.5rem; }
+.bg-paws span:nth-child(3) { top: 45%; left: 40%; animation-delay: 4s;
+font-size: 2.5rem; }
+.bg-paws span:nth-child(4) { top: 70%; left: 10%; animation-delay: 6s;
+font-size: 2rem; }
+.bg-paws span:nth-child(5) { top: 80%; left: 60%; animation-delay: 1s;
+font-size: 3.5rem; }
+.bg-paws span:nth-child(6) { top: 35%; left: 85%; animation-delay: 3s;
+font-size: 1.8rem; }
+.bg-paws span:nth-child(7) { top: 60%; left: 30%; animation-delay: 5s;
+font-size: 2.2rem; }
+.bg-paws span:nth-child(8) { top: 10%; left: 50%; animation-delay: 7s;
+font-size: 1.2rem; }
+@keyframes floatPaw {
+0%,100% { transform: translateY(0) rotate(0deg); }
+50% { transform: translateY(-20px) rotate(10deg); }
+}
+/* ===== SIDEBAR ===== */
+.sidebar {
+width: var(--sidebar-w);
+background: var(--sidebar-bg);
+min-height: 100vh;
+position: fixed;
+left: 0; top: 0;
+display: flex;
+flex-direction: column;
+z-index: 100;
+padding: 28px 16px;
+box-shadow: 4px 0 30px rgba(0,0,0,0.25);
+}
+.sidebar-brand {
+text-align: center;
+margin-bottom: 36px;
+padding-bottom: 24px;
+border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.brand-icon {
+font-size: 2.8rem;
+display: block;
+margin-bottom: 8px;
+animation: bounce 2s infinite;
+}
+@keyframes bounce {
+0%,100% { transform: translateY(0); }
+50% { transform: translateY(-6px); }
+}
+.brand-name {
+font-family: 'Fredoka One', cursive;
+font-size: 1.7rem;
+color: var(--purple);
+letter-spacing: 1px;
+}
+.brand-sub {
+font-size: 0.72rem;
+color: rgba(255,255,255,0.4);
+letter-spacing: 1.5px;
+text-transform: uppercase;
+margin-top: 2px;
+}
+.sidebar-nav {
+display: flex;
+flex-direction: column;
+gap: 6px;
+flex: 1;
+}
+.nav-btn {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 13px 16px;
+border: none;
+background: transparent;
+color: rgba(255,255,255,0.55);
+border-radius: var(--radius-sm);
+cursor: pointer;
+font-family: 'Nunito', sans-serif;
+font-size: 0.95rem;
+font-weight: 700;
+transition: all 0.2s ease;
+text-align: left;
+width: 100%;
+}
+.nav-btn:hover {
+background: rgba(167,139,250,0.15);
+color: var(--purple);
+transform: translateX(4px);
+}
+.nav-btn.active {
+background: linear-gradient(135deg, #7c3aed, #a78bfa);
+color: white;
+box-shadow: 0 4px 16px rgba(124,58,237,0.4);
+}
+.nav-icon { font-size: 1.2rem; }
+.sidebar-footer {
+text-align: center;
+font-size: 0.72rem;
+color: rgba(255,255,255,0.25);
+padding-top: 16px;
+border-top: 1px solid rgba(255,255,255,0.06);
+}
+/* ===== MAIN ===== */
+.main {
+margin-left: var(--sidebar-w);
+flex: 1;
+display: flex;
+flex-direction: column;
+min-height: 100vh;
+position: relative;
+z-index: 1;
+}
+/* ===== TOPBAR ===== */
+.topbar {
+background: rgba(255,255,255,0.85);
+backdrop-filter: blur(12px);
+border-bottom: 1px solid rgba(167,139,250,0.15);
+padding: 18px 32px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+position: sticky;
+top: 0;
+z-index: 50;
+}
+.topbar-title {
+font-family: 'Fredoka One', cursive;
+font-size: 1.4rem;
+color: var(--purple-dark);
+}
+.topbar-right {
+display: flex;
+align-items: center;
+gap: 8px;
+}
+.status-dot {
+width: 9px; height: 9px;
+background: var(--green);
+border-radius: 50%;
+animation: pulse 2s infinite;
+}
+@keyframes pulse {
+0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.5); }
+50% { box-shadow: 0 0 0 6px rgba(74,222,128,0); }
+}
+.status-text { font-size: 0.82rem; color: var(--text-soft); font-weight: 600; }
+/* ===== SECTIONS ===== */
+.section { display: none; padding: 32px; animation: fadeIn 0.3s ease; }
+.section.active { display: block; }
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(12px); }
+to { opacity: 1; transform: translateY(0); }
+}
+/* ===== DASHBOARD ===== */
+.welcome-banner {
+background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%);
+border-radius: var(--radius);
+padding: 28px 32px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 28px;
+box-shadow: 0 8px 32px rgba(124,58,237,0.3);
+overflow: hidden;
+position: relative;
+}
+.welcome-banner::before {
+content: '';
+position: absolute;
+top: -40px; right: -40px;
+width: 180px; height: 180px;
+background: rgba(255,255,255,0.08);
+border-radius: 50%;
+}
+.welcome-text h2 {
+font-family: 'Fredoka One', cursive;
+font-size: 1.8rem;
+color: white;
+margin-bottom: 6px;
+}
+.welcome-text p { color: rgba(255,255,255,0.8); font-size: 1rem; }
+.welcome-art { font-size: 3.5rem; animation: wiggle 2s infinite; }
+@keyframes wiggle {
+0%,100% { transform: rotate(-5deg); }
+50% { transform: rotate(5deg); }
+}
+.stats-grid {
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 18px;
+margin-bottom: 28px;
+}
+.stat-card {
+background: white;
+border-radius: var(--radius);
+padding: 24px 20px;
+display: flex;
+align-items: center;
+gap: 16px;
+box-shadow: var(--card-shadow);
+transition: transform 0.2s, box-shadow 0.2s;
+border-top: 4px solid transparent;
+cursor: default;
+}
+.stat-card:hover {
+transform: translateY(-4px);
+box-shadow: 0 12px 32px rgba(124,58,237,0.15);
+}
+.stat-purple { border-top-color: var(--purple); }
+.stat-teal { border-top-color: var(--teal); }
+.stat-orange { border-top-color: var(--orange); }
+.stat-green { border-top-color: var(--green); }
+.stat-icon { font-size: 2rem; }
+.stat-number {
+font-family: 'Fredoka One', cursive;
+font-size: 2.2rem;
+line-height: 1;
+color: var(--text);
+}
+.stat-label { font-size: 0.8rem; color: var(--text-soft); font-weight: 700;
+text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.dashboard-cards {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 18px;
+}
+.quick-card {
+background: white;
+border-radius: var(--radius);
+padding: 24px;
+display: flex;
+align-items: center;
+gap: 14px;
+cursor: pointer;
+box-shadow: var(--card-shadow);
+transition: all 0.2s ease;
+border: 2px solid transparent;
+}
+.quick-card:hover {
+border-color: var(--purple);
+transform: translateY(-3px);
+box-shadow: 0 8px 24px rgba(124,58,237,0.18);
+}
+.qc-emoji { font-size: 1.8rem; }
+.qc-label { font-weight: 800; font-size: 1rem; flex: 1; }
+.qc-arrow { color: var(--purple); font-size: 1.2rem; font-weight: 800; }
+/* ===== SECTION HEADER ===== */
+.section-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 24px;
+}
+.section-title {
+font-family: 'Fredoka One', cursive;
+font-size: 1.6rem;
+color: var(--text);
+}
+.section-sub { color: var(--text-soft); font-size: 0.9rem; margin-top: 2px; }
+.add-btn {
+background: linear-gradient(135deg, #7c3aed, #a78bfa);
+color: white;
+border: none;
+border-radius: 12px;
+padding: 12px 22px;
+font-family: 'Nunito', sans-serif;
+font-size: 0.95rem;
+font-weight: 800;
+cursor: pointer;
+box-shadow: 0 4px 16px rgba(124,58,237,0.35);
+transition: all 0.2s ease;
+white-space: nowrap;
+}
+.add-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 8px 24px rgba(124,58,237,0.45);
+}
+.add-btn:active { transform: translateY(0); }
+/* ===== TABLE ===== */
+.table-card {
+background: white;
+border-radius: var(--radius);
+box-shadow: var(--card-shadow);
+overflow: hidden;
+}
+.table {
+width: 100%;
+border-collapse: collapse;
+}
+.table thead tr {
+background: linear-gradient(135deg, #7c3aed, #a78bfa);
+}
+.table th {
+color: white;
+padding: 14px 18px;
+text-align: left;
+font-size: 0.82rem;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+}
+.table td {
+padding: 14px 18px;
+border-bottom: 1px solid #f3f0ff;
+font-size: 0.92rem;
+font-weight: 600;
+}
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr {
+transition: background 0.15s;
+}
+.table tbody tr:hover td { background: #faf5ff; }
+/* Health badges */
+.badge {
+display: inline-block;
+padding: 4px 10px;
+border-radius: 20px;
+font-size: 0.78rem;
+font-weight: 800;
+text-transform: uppercase;
+letter-spacing: 0.3px;
+}
+.badge-healthy { background: #dcfce7; color: #16a34a; }
+.badge-sick { background: #fef9c3; color: #a16207; }
+.badge-injured { background: #fee2e2; color: #dc2626; }
+.vacc-yes { color: var(--green-dark); font-size: 1.1rem; }
+.vacc-no { color: #d1d5db; font-size: 1.1rem; }
+.delete-btn {
+background: #fee2e2;
+color: #dc2626;
+border: none;
+border-radius: 8px;
+padding: 6px 14px;
+font-size: 0.82rem;
+font-weight: 800;
+cursor: pointer;
+transition: all 0.2s;
+font-family: 'Nunito', sans-serif;
+}
+.delete-btn:hover {
+background: #dc2626;
+color: white;
+transform: scale(1.05);
+}
+.empty-state {
+text-align: center;
+padding: 48px 24px;
+color: var(--text-soft);
+}
+.empty-state div { font-size: 3rem; margin-bottom: 12px; }
+.empty-state p { font-size: 1rem; font-weight: 600; }
+/* ===== MODALS ===== */
+.modal-overlay {
+display: none;
+position: fixed;
+inset: 0;
+background: rgba(30, 16, 53, 0.6);
+backdrop-filter: blur(6px);
+z-index: 200;
+align-items: center;
+justify-content: center;
+animation: overlayIn 0.2s ease;
+}
+.modal-overlay.open { display: flex; }
+@keyframes overlayIn {
+from { opacity: 0; }
+to { opacity: 1; }
+}
+.modal {
+background: white;
+border-radius: 24px;
+width: 100%;
+max-width: 520px;
+margin: 20px;
+box-shadow: 0 24px 64px rgba(30,16,53,0.35);
+animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+overflow: hidden;
+}
+@keyframes modalIn {
+from { opacity: 0; transform: scale(0.88) translateY(20px); }
+to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-header {
+background: linear-gradient(135deg, #7c3aed, #a78bfa);
+padding: 20px 24px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+.modal-header h3 {
+font-family: 'Fredoka One', cursive;
+font-size: 1.3rem;
+color: white;
+}
+.modal-close {
+background: rgba(255,255,255,0.2);
+border: none;
+color: white;
+width: 32px; height: 32px;
+border-radius: 50%;
+cursor: pointer;
+font-size: 1rem;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: background 0.2s;
+}
+.modal-close:hover { background: rgba(255,255,255,0.35); }
+.modal-body { padding: 24px; display: flex; flex-direction: column; gap: 14px;
+}
+.modal-footer {
+padding: 16px 24px;
+display: flex;
+gap: 10px;
+justify-content: flex-end;
+border-top: 1px solid #f3f0ff;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label {
+font-size: 0.82rem;
+font-weight: 800;
+color: var(--text-soft);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+border: 2px solid #ede9fe;
+border-radius: var(--radius-sm);
+padding: 11px 14px;
+font-family: 'Nunito', sans-serif;
+font-size: 0.95rem;
+color: var(--text);
+transition: border-color 0.2s, box-shadow 0.2s;
+outline: none;
+background: #faf7ff;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+border-color: var(--purple);
+box-shadow: 0 0 0 3px rgba(167,139,250,0.2);
+background: white;
+}
+.form-group textarea { resize: vertical; }
+.form-check { justify-content: center; }
+.checkbox-label {
+display: flex;
+align-items: center;
+gap: 10px;
+cursor: pointer;
+font-weight: 700;
+font-size: 0.95rem;
+color: var(--text);
+padding-top: 20px;
+}
+.checkbox-label input[type="checkbox"] {
+width: 20px; height: 20px;
+accent-color: var(--purple-dark);
+cursor: pointer;
+padding: 0;
+border: none;
+background: none;
+}
+.btn-cancel {
+background: #f3f0ff;
+color: var(--purple-dark);
+border: none;
+border-radius: 10px;
+padding: 11px 20px;
+font-family: 'Nunito', sans-serif;
+font-weight: 800;
+cursor: pointer;
+transition: background 0.2s;
+}
+.btn-cancel:hover { background: #ede9fe; }
+.btn-save {
+background: linear-gradient(135deg, #7c3aed, #a78bfa);
+color: white;
+border: none;
+border-radius: 10px;
+padding: 11px 22px;
+font-family: 'Nunito', sans-serif;
+font-weight: 800;
+cursor: pointer;
+box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+transition: all 0.2s;
+}
+.btn-save:hover {
+transform: translateY(-1px);
+box-shadow: 0 6px 20px rgba(124,58,237,0.45);
+}
+/* ===== TOAST ===== */
+.toast {
+position: fixed;
+bottom: 28px;
+right: 28px;
+background: #1e1035;
+color: white;
+padding: 14px 22px;
+border-radius: 14px;
+font-weight: 700;
+font-size: 0.95rem;
+box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+transform: translateY(80px);
+opacity: 0;
+transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+z-index: 999;
+border-left: 4px solid var(--purple);
+}
+.toast.show {
+transform: translateY(0);
+opacity: 1;
+}
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+.stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+:root { --sidebar-w: 70px; }
+.brand-name, .brand-sub, .sidebar-footer, .nav-btn span:last-child {
+display: none; }
+.nav-btn { justify-content: center; padding: 14px; }
+.sidebar-brand { padding-bottom: 16px; }
+.brand-icon { font-size: 2rem; margin-bottom: 0; }
+.dashboard-cards { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+.section { padding: 20px 16px; }
+.stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row { grid-template-columns: 1fr; }
+.topbar { padding: 14px 18px; }
+.welcome-banner { flex-direction: column; gap: 12px; text-align: center; }
+}
+/* ===== USER PILL IN TOPBAR ===== */
+.user-pill {
+display: flex;
+align-items: center;
+gap: 8px;
+background: #f3f0ff;
+border: 2px solid #ede9fe;
+border-radius: 40px;
+padding: 6px 14px 6px 8px;
+margin-left: 16px;
+}
+.user-avatar {
+font-size: 1.3rem;
+line-height: 1;
+}
+.user-name {
+font-weight: 800;
+font-size: 0.88rem;
+color: #1e1b4b;
+max-width: 120px;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+.user-role-badge {
+font-size: 0.72rem;
+font-weight: 800;
+padding: 3px 8px;
+border-radius: 20px;
+text-transform: uppercase;
+letter-spacing: 0.4px;
+}
+.role-volunteer {
+background: #dcfce7;
+color: #16a34a;
+}
+.role-vet {
+background: #dbeafe;
+color: #1d4ed8;
+}
+.logout-btn {
+background: #fee2e2;
+color: #dc2626;
+border: none;
+border-radius: 20px;
+padding: 5px 12px;
+font-family: 'Nunito', sans-serif;
+font-size: 0.78rem;
+font-weight: 800;
+cursor: pointer;
+transition: all 0.2s;
+margin-left: 4px;
+}
+.logout-btn:hover {
+background: #dc2626;
+color: white;
+}
