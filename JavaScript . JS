@@ -1,0 +1,454 @@
+const API_URL = 'http://localhost:8080/api';
+
+
+document.addEventListener('DOMContentLoaded', () => {
+   loadDashboard();
+   loadAnimals();
+   loadAreas();
+   loadFood();
+   loadMedicines();
+   loadReviews();
+   loadAdoptions();
+   populateSelects();
+});
+
+
+function showSection(sectionId, btn) {
+   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+   document.getElementById(sectionId).classList.add('active');
+   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+   if (btn) btn.classList.add('active');
+   const titles = {
+       dashboard: 'Dashboard', animals: 'Animals', areas: 'Areas',
+       food: 'Food Distribution', medicine: 'Medicine Records',
+       reviews: 'Reviews', adoptions: 'Adoption Requests'
+   };
+   document.getElementById('topbarTitle').textContent = titles[sectionId] || sectionId;
+}
+
+
+// ===== MODALS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+function closeModalOutside(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+
+// ===== TOAST =====
+function showToast(msg, type = '') {
+   const t = document.getElementById('toast');
+   t.textContent = msg;
+   t.className = 'toast show ' + type;
+   clearTimeout(t._timer);
+   t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+
+function setRating(val) {
+   document.getElementById('reviewRating').value = val;
+   document.querySelectorAll('.star').forEach(s => {
+       s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+   });
+}
+
+
+
+
+function loadDashboard() {
+   fetch(`${API_URL}/animals`).then(r => r.json()).then(animals => {
+       document.getElementById('totalAnimals').textContent   = animals.length;
+       document.getElementById('unhealthyCount').textContent = animals.filter(a => a.healthStatus !== 'healthy').length;
+       document.getElementById('vaccinatedCount').textContent = animals.filter(a => a.isVaccinated).length;
+   }).catch(() => {});
+
+
+   fetch(`${API_URL}/areas`).then(r => r.json()).then(areas => {
+       document.getElementById('totalAreas').textContent = areas.length;
+   }).catch(() => {});
+
+
+   fetch(`${API_URL}/adoptions`).then(r => r.json()).then(adoptions => {
+       document.getElementById('adoptionCount').textContent = adoptions.filter(a => a.status === 'approved').length;
+   }).catch(() => {});
+
+
+   fetch(`${API_URL}/reviews`).then(r => r.json()).then(reviews => {
+       document.getElementById('reviewCount').textContent = reviews.length;
+   }).catch(() => {});
+}
+
+
+
+
+function loadAnimals() {
+   fetch(`${API_URL}/animals`).then(r => r.json()).then(animals => {
+       const tbody = document.getElementById('animalsList');
+       const empty = document.getElementById('animalsEmpty');
+       tbody.innerHTML = '';
+       if (!animals.length) { empty.style.display = 'block'; return; }
+       empty.style.display = 'none';
+       animals.forEach(a => {
+           const badge = `<span class="badge badge-${a.healthStatus}">${a.healthStatus}</span>`;
+           const vacc  = a.isVaccinated ? '<span class="vacc-yes"></span>' : '<span class="vacc-no">✗</span>';
+           tbody.innerHTML += `<tr>
+               <td><strong>${a.name}</strong></td>
+               <td>${a.type === 'dog'} ${a.type}</td>
+               <td>${a.area?.name || '—'}</td>
+               <td>${badge}</td>
+               <td>${a.age != null ? a.age + ' yrs' : '—'}</td>
+               <td>${a.weight != null ? a.weight + ' kg' : '—'}</td>
+               <td>${vacc}</td>
+               <td><button class="delete-btn" onclick="deleteAnimal(${a.id})">Delete</button></td>
+           </tr>`;
+       });
+   }).catch(() => {});
+}
+
+
+function saveAnimal() {
+   const name = document.getElementById('animalName').value.trim();
+   const area = document.getElementById('animalArea').value;
+   if (!name || !area) { showToast(' Please fill name and area', 'error'); return; }
+   const body = {
+       name,
+       type:         document.getElementById('animalType').value,
+       healthStatus: document.getElementById('animalHealth').value,
+       age:          parseInt(document.getElementById('animalAge').value) || null,
+       weight:       parseFloat(document.getElementById('animalWeight').value) || null,
+       isVaccinated: document.getElementById('animalVaccinated').checked,
+       area:         { id: parseInt(area) }
+   };
+   fetch(`${API_URL}/animals`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+       .then(r => r.json()).then(() => {
+       showToast('🐾 Animal added!');
+       closeModal('animalModal');
+       document.getElementById('animalName').value = '';
+       document.getElementById('animalAge').value = '';
+       document.getElementById('animalWeight').value = '';
+       document.getElementById('animalVaccinated').checked = false;
+       loadAnimals(); loadDashboard(); populateSelects();
+   }).catch(() => showToast(' Error adding animal', 'error'));
+}
+
+
+function deleteAnimal(id) {
+   if (!confirm('Delete this animal?')) return;
+   fetch(`${API_URL}/animals/${id}`, { method: 'DELETE' })
+       .then(() => { showToast(' Animal removed'); loadAnimals(); loadDashboard(); populateSelects(); })
+       .catch(() => showToast('Error', 'error'));
+}
+
+
+
+
+function loadAreas() {
+   fetch(`${API_URL}/areas`).then(r => r.json()).then(areas => {
+       const tbody = document.getElementById('areasList');
+       const empty = document.getElementById('areasEmpty');
+       tbody.innerHTML = '';
+       if (!areas.length) { empty.style.display = 'block'; return; }
+       empty.style.display = 'none';
+       areas.forEach(a => {
+           tbody.innerHTML += `<tr>
+               <td><strong>${a.name}</strong></td>
+               <td>${a.location}</td>
+               <td>${a.capacity != null ? a.capacity + ' animals' : '—'}</td>
+               <td><button class="delete-btn" onclick="deleteArea(${a.id})">Delete</button></td>
+           </tr>`;
+       });
+   }).catch(() => {});
+}
+
+
+function saveArea() {
+   const name = document.getElementById('areaName').value.trim();
+   const loc  = document.getElementById('areaLocation').value.trim();
+   if (!name || !loc) { showToast(' Please fill all fields', 'error'); return; }
+   const body = { name, location: loc, capacity: parseInt(document.getElementById('areaCapacity').value) || null };
+   fetch(`${API_URL}/areas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+       .then(r => r.json()).then(() => {
+       showToast(' Area added!');
+       closeModal('areaModal');
+       document.getElementById('areaName').value = '';
+       document.getElementById('areaLocation').value = '';
+       document.getElementById('areaCapacity').value = '';
+       loadAreas(); loadDashboard(); populateSelects();
+   }).catch(() => showToast(' Error', 'error'));
+}
+
+
+function deleteArea(id) {
+   if (!confirm('Delete this area?')) return;
+   fetch(`${API_URL}/areas/${id}`, { method: 'DELETE' })
+       .then(() => { showToast(' Area removed'); loadAreas(); loadDashboard(); populateSelects(); })
+       .catch(() => showToast(' Error', 'error'));
+}
+
+
+
+
+function loadFood() {
+   fetch(`${API_URL}/food`).then(r => r.json()).then(foods => {
+       const tbody = document.getElementById('foodList');
+       const empty = document.getElementById('foodEmpty');
+       tbody.innerHTML = '';
+       if (!foods.length) { empty.style.display = 'block'; return; }
+       empty.style.display = 'none';
+       foods.forEach(f => {
+           const date = new Date(f.distributionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+           tbody.innerHTML += `<tr>
+               <td><strong>${f.area?.name || '—'}</strong></td>
+               <td>${f.volunteer?.name || '—'}</td>
+               <td> ${f.quantity} kg</td>
+               <td>${f.notes || '—'}</td>
+               <td>${date}</td>
+               <td><button class="delete-btn" onclick="deleteFood(${f.id})">Delete</button></td>
+           </tr>`;
+       });
+   }).catch(() => {});
+}
+
+
+function saveFood() {
+   const area = document.getElementById('foodArea').value;
+   const qty  = document.getElementById('foodQuantity').value;
+   if (!area || !qty) { showToast(' Please fill area and quantity', 'error'); return; }
+   const volId = document.getElementById('foodVolunteer').value;
+   const body = {
+       quantity: parseFloat(qty),
+       distributionDate: new Date().toISOString(),
+       notes: document.getElementById('foodNotes').value || null,
+       area: { id: parseInt(area) },
+       volunteer: volId ? { id: parseInt(volId) } : null
+   };
+   fetch(`${API_URL}/food`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+       .then(r => r.json()).then(() => {
+       showToast(' Food logged!');
+       closeModal('foodModal');
+       document.getElementById('foodQuantity').value = '';
+       document.getElementById('foodNotes').value = '';
+       loadFood();
+   }).catch(() => showToast(' Error', 'error'));
+}
+
+
+function deleteFood(id) {
+   if (!confirm('Delete this record?')) return;
+   fetch(`${API_URL}/food/${id}`, { method: 'DELETE' })
+       .then(() => { showToast(' Record removed'); loadFood(); })
+       .catch(() => showToast(' Error', 'error'));
+}
+
+
+
+
+function loadMedicines() {
+   fetch(`${API_URL}/medicines`).then(r => r.json()).then(meds => {
+       const tbody = document.getElementById('medicineList');
+       const empty = document.getElementById('medicineEmpty');
+       tbody.innerHTML = '';
+       if (!meds.length) { empty.style.display = 'block'; return; }
+       empty.style.display = 'none';
+       meds.forEach(m => {
+           const date = new Date(m.givenDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+           tbody.innerHTML += `<tr>
+               <td><strong>${m.animal?.name || '—'}</strong></td>
+               <td>${m.vet?.name || '—'}</td>
+               <td> ${m.medicineName}</td>
+               <td>${date}</td>
+               <td>${m.treatmentNotes || '—'}</td>
+               <td><button class="delete-btn" onclick="deleteMedicine(${m.id})">Delete</button></td>
+           </tr>`;
+       });
+   }).catch(() => {});
+}
+
+
+function saveMedicine() {
+   const animal = document.getElementById('medicineAnimal').value;
+   const name   = document.getElementById('medicineName').value.trim();
+   if (!animal || !name) { showToast(' Please fill animal and medicine name', 'error'); return; }
+   const vetId = document.getElementById('medicineVet').value;
+   const body = {
+       medicineName:   name,
+       givenDate:      new Date().toISOString(),
+       treatmentNotes: document.getElementById('medicineNotes').value || null,
+       animal:         { id: parseInt(animal) },
+       vet:            vetId ? { id: parseInt(vetId) } : null
+   };
+   fetch(`${API_URL}/medicines`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+       .then(r => r.json()).then(() => {
+       showToast(' Medicine recorded!');
+       closeModal('medicineModal');
+       document.getElementById('medicineName').value = '';
+       document.getElementById('medicineNotes').value = '';
+       loadMedicines();
+   }).catch(() => showToast(' Error', 'error'));
+}
+
+
+function deleteMedicine(id) {
+   if (!confirm('Delete this record?')) return;
+   fetch(`${API_URL}/medicines/${id}`, { method: 'DELETE' })
+       .then(() => { showToast(' Record removed'); loadMedicines(); })
+       .catch(() => showToast(' Error', 'error'));
+}
+
+
+function loadReviews() {
+   fetch(`${API_URL}/reviews`).then(r => r.json()).then(reviews => {
+       const tbody = document.getElementById('reviewsList');
+       const empty = document.getElementById('reviewsEmpty');
+       tbody.innerHTML = '';
+       if (!reviews.length) { empty.style.display = 'block'; return; }
+       empty.style.display = 'none';
+       reviews.forEach(r => {
+           const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+           const date  = new Date(r.reviewDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+           tbody.innerHTML += `<tr>
+               <td><strong>${r.volunteer?.name || '—'}</strong></td>
+               <td>${r.area?.name || '—'}</td>
+               <td><span class="stars-display">${stars}</span></td>
+               <td>${r.comment || '—'}</td>
+               <td>${date}</td>
+               <td><button class="delete-btn" onclick="deleteReview(${r.id})">Delete</button></td>
+           </tr>`;
+       });
+   }).catch(() => {});
+}
+
+
+function saveReview() {
+   const vol    = document.getElementById('reviewVolunteer').value;
+   const area   = document.getElementById('reviewArea').value;
+   const rating = parseInt(document.getElementById('reviewRating').value);
+   if (!vol || !area || !rating) { showToast(' Please fill all fields and select a rating', 'error'); return; }
+   const body = {
+       rating,
+       comment:    document.getElementById('reviewComment').value || null,
+       reviewDate: new Date().toISOString(),
+       volunteer:  { id: parseInt(vol) },
+       area:       { id: parseInt(area) }
+   };
+   fetch(`${API_URL}/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+       .then(r => r.json()).then(() => {
+       showToast('⭐ Review submitted!');
+       closeModal('reviewModal');
+       document.getElementById('reviewComment').value = '';
+       document.getElementById('reviewRating').value = '0';
+       document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+       loadReviews(); loadDashboard();
+   }).catch(() => showToast(' Error', 'error'));
+}
+
+
+function deleteReview(id) {
+   if (!confirm('Delete this review?')) return;
+   fetch(`${API_URL}/reviews/${id}`, { method: 'DELETE' })
+       .then(() => { showToast(' Review removed'); loadReviews(); loadDashboard(); })
+       .catch(() => showToast(' Error', 'error'));
+}
+
+
+
+
+function loadAdoptions() {
+   fetch(`${API_URL}/adoptions`).then(r => r.json()).then(adoptions => {
+       const tbody = document.getElementById('adoptionsList');
+       const empty = document.getElementById('adoptionsEmpty');
+       tbody.innerHTML = '';
+       if (!adoptions.length) { empty.style.display = 'block'; return; }
+       empty.style.display = 'none';
+       adoptions.forEach(a => {
+           const date   = new Date(a.requestDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+           const badge  = `<span class="badge badge-${a.status}">${a.status}</span>`;
+           const actions = a.status === 'pending'
+               ? `<button class="approve-btn" onclick="updateAdoptionStatus(${a.id},'approved')">Approve</button>
+                  <button class="reject-btn"  onclick="updateAdoptionStatus(${a.id},'rejected')">Reject</button>`
+               : `<button class="delete-btn"  onclick="deleteAdoption(${a.id})">Delete</button>`;
+           tbody.innerHTML += `<tr>
+               <td><strong>${a.animal?.name || '—'}</strong> (${a.animal?.type || ''})</td>
+               <td>${a.volunteer?.name || '—'}</td>
+               <td>${badge}</td>
+               <td>${date}</td>
+               <td class="action-btns">${actions}</td>
+           </tr>`;
+       });
+   }).catch(() => {});
+}
+
+
+function saveAdoption() {
+   const animal    = document.getElementById('adoptionAnimal').value;
+   const volunteer = document.getElementById('adoptionVolunteer').value;
+   if (!animal || !volunteer) { showToast(' Please select animal and volunteer', 'error'); return; }
+   const body = {
+       requestDate: new Date().toISOString(),
+       status:      'pending',
+       animal:      { id: parseInt(animal) },
+       volunteer:   { id: parseInt(volunteer) }
+   };
+   fetch(`${API_URL}/adoptions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+       .then(r => r.json()).then(() => {
+       showToast(' Adoption request submitted!');
+       closeModal('adoptionModal');
+       loadAdoptions(); loadDashboard();
+   }).catch(() => showToast(' Error', 'error'));
+}
+
+
+function updateAdoptionStatus(id, status) {
+   fetch(`${API_URL}/adoptions/${id}/status?status=${status}`, { method: 'PUT' })
+       .then(r => r.json()).then(() => {
+       showToast(status === 'approved' ? ' Adoption approved!' : ' Adoption rejected');
+       loadAdoptions(); loadDashboard();
+   }).catch(() => showToast(' Error', 'error'));
+}
+
+
+function deleteAdoption(id) {
+   if (!confirm('Delete this request?')) return;
+   fetch(`${API_URL}/adoptions/${id}`, { method: 'DELETE' })
+       .then(() => { showToast(' Request removed'); loadAdoptions(); loadDashboard(); })
+       .catch(() => showToast(' Error', 'error'));
+}
+
+
+// ===== POPULATE SELECTS =====
+function populateSelects() {
+   fetch(`${API_URL}/areas`).then(r => r.json()).then(areas => {
+       ['animalArea', 'foodArea', 'reviewArea'].forEach(id => {
+           const sel = document.getElementById(id);
+           if (!sel) return;
+           sel.innerHTML = '<option value="">Select area</option>';
+           areas.forEach(a => sel.innerHTML += `<option value="${a.id}">${a.name}</option>`);
+       });
+   }).catch(() => {});
+
+
+   fetch(`${API_URL}/animals`).then(r => r.json()).then(animals => {
+       ['medicineAnimal', 'adoptionAnimal'].forEach(id => {
+           const sel = document.getElementById(id);
+           if (!sel) return;
+           sel.innerHTML = '<option value="">Select animal</option>';
+           animals.forEach(a => sel.innerHTML += `<option value="${a.id}">${a.name} (${a.type})</option>`);
+       });
+   }).catch(() => {});
+
+
+   fetch(`${API_URL}/volunteers`).then(r => r.json()).then(vols => {
+       ['foodVolunteer', 'reviewVolunteer', 'adoptionVolunteer'].forEach(id => {
+           const sel = document.getElementById(id);
+           if (!sel) return;
+           sel.innerHTML = '<option value="">Select volunteer</option>';
+           vols.forEach(v => sel.innerHTML += `<option value="${v.id}">${v.name}</option>`);
+       });
+   }).catch(() => {});
+
+
+   fetch(`${API_URL}/vets`).then(r => r.json()).then(vets => {
+       const sel = document.getElementById('medicineVet');
+       if (!sel) return;
+       sel.innerHTML = '<option value="">Select vet (optional)</option>';
+       vets.forEach(v => sel.innerHTML += `<option value="${v.id}">${v.name} — ${v.specialization || ''}</option>`);
+   }).catch(() => {});
+}
