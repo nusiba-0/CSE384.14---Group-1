@@ -1,3 +1,4 @@
+
 USE meowwoof_simple;
 
 CREATE TABLE IF NOT EXISTS volunteers (
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS reviews (
     FOREIGN KEY (volunteer_id) REFERENCES volunteers(id) ON DELETE CASCADE,
     FOREIGN KEY (area_id)      REFERENCES areas(id)      ON DELETE CASCADE
 );
+
 
 
 
@@ -93,4 +95,3 @@ LEFT JOIN volunteers v ON a.id = v.area_id
 LEFT JOIN reviews    r ON a.id = r.area_id
 GROUP BY a.id, a.name
 ORDER BY avg_rating DESC;
-
